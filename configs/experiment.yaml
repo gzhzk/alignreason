@@ -1,0 +1,44 @@
+project_name: alignreason
+
+models:
+  train_base: Qwen/Qwen3-4B-Instruct-2507
+  thinking_reference: Qwen/Qwen3-4B-Thinking-2507
+
+data:
+  dataset_name: open-thoughts/OpenThoughts3-1.2M
+  split: train
+  streaming: true
+  smoke_sample_size: 100
+  train_sample_size: 20000
+  output_dir: data
+
+training:
+  output_dir: outputs/qwen3-4b-instruct-2507-alignreason-lora
+  max_seq_length: 4096
+  num_train_epochs: 1
+  learning_rate: 1.0e-5
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 8
+  gradient_checkpointing: true
+  fp16: true
+  bf16: false
+  logging_steps: 10
+  save_steps: 200
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+
+evaluation:
+  benchmark: LiveBench
+  primary_delta: fine_tuned_instruct_minus_base_instruct
+  compare_models:
+    - Qwen/Qwen3-4B-Instruct-2507
+    - outputs/qwen3-4b-instruct-2507-alignreason-lora
+    - Qwen/Qwen3-4B-Thinking-2507
