@@ -38,7 +38,12 @@ lora:
 evaluation:
   benchmark: LiveBench
   primary_delta: fine_tuned_instruct_minus_base_instruct
+  leaderboard_url: https://livebench.ai/
   compare_models:
     - Qwen/Qwen3-4B-Instruct-2507
     - outputs/qwen3-4b-instruct-2507-alignreason-lora
     - Qwen/Qwen3-4B-Thinking-2507
+  report_groups:
+    - base_instruct_delta
+    - same_size_thinking_reference
+    - public_large_model_leaderboard

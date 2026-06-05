@@ -10,19 +10,21 @@ The main fine-tuning target is:
 
 - `Qwen/Qwen3-4B-Instruct-2507`
 
-The comparison baselines are:
+The comparison set is:
 
 - `Qwen/Qwen3-4B-Instruct-2507` before fine-tuning
 - `Qwen/Qwen3-4B-Thinking-2507` as a stronger thinking-model reference
+- current large models on the public LiveBench leaderboard
 
-This keeps the experiment clean: the LoRA adapter is trained only on the non-thinking instruct model, then compared against both its original baseline and Qwen's dedicated thinking variant.
+This keeps the experiment clean: the LoRA adapter is trained only on the non-thinking instruct model, then compared against its original baseline, Qwen's dedicated thinking variant, and the broader public leaderboard.
 
 ## Initial Plan
 
 | Area | Choice |
 | --- | --- |
 | Base model for SFT | `Qwen/Qwen3-4B-Instruct-2507` |
-| Reference model | `Qwen/Qwen3-4B-Thinking-2507` |
+| Same-size reference | `Qwen/Qwen3-4B-Thinking-2507` |
+| Public reference | Large models on the LiveBench leaderboard |
 | Dataset | `open-thoughts/OpenThoughts3-1.2M` |
 | Sample size | 20,000 examples after smoke tests |
 | Data style | Chat messages with assistant reasoning traces |
@@ -34,11 +36,11 @@ This keeps the experiment clean: the LoRA adapter is trained only on the non-thi
 
 ## Why Instruct for Fine-Tuning?
 
-`Qwen3-4B-Instruct-2507` is the main target because it is a strong 4B non-thinking instruct model. Fine-tuning it with explicit reasoning data tests a clear hypothesis:
+`Qwen3-4B-Instruct-2507` is the main target because it is a strong 4B non-thinking instruct model that has already been optimized for reasoning, math, science, coding, and instruction following. Fine-tuning it with explicit reasoning data tests a narrow hypothesis:
 
-> Can reasoning traces teach a normal instruct model to reason better?
+> Can reasoning traces further improve a reasoning-optimized non-thinking instruct model?
 
-`Qwen3-4B-Thinking-2507` is useful as a comparison point, but it is not the first fine-tuning target. It already defaults to long-form reasoning, so gains from OpenThoughts would be harder to interpret.
+`Qwen3-4B-Thinking-2507` is useful as a same-size comparison point, but it is not the first fine-tuning target. It already defaults to long-form reasoning, so gains from OpenThoughts would be harder to interpret.
 
 ## Repository Layout
 
@@ -114,13 +116,13 @@ On an RTX 3090, `4096` context is the conservative first target. `8192` should b
 
 ## Evaluation Design
 
-Run LiveBench in three conditions:
+Run LiveBench in three local conditions:
 
 | Condition | Model |
 | --- | --- |
 | Baseline | `Qwen/Qwen3-4B-Instruct-2507` |
 | Fine-tuned | `Qwen/Qwen3-4B-Instruct-2507` + AlignReason LoRA |
-| Reference | `Qwen/Qwen3-4B-Thinking-2507` |
+| Same-size reference | `Qwen/Qwen3-4B-Thinking-2507` |
 
 The main reported result should be:
 
@@ -128,7 +130,18 @@ The main reported result should be:
 fine-tuned instruct score - baseline instruct score
 ```
 
-The thinking model score is a reference point, not the primary success criterion.
+The thinking model score is a same-size reference point, not the only external target.
+
+Also report the fine-tuned model against the public LiveBench leaderboard:
+
+| Comparison | Purpose |
+| --- | --- |
+| Fine-tuned vs frontier models | Show the absolute gap to current large proprietary models |
+| Fine-tuned vs large open models | Show whether a 4B LoRA can approach larger open-weight systems |
+| Fine-tuned vs same-size Qwen thinking | Separate scale effects from reasoning-mode effects |
+| Fine-tuned vs base instruct | Measure the actual effect of this project |
+
+The leaderboard comparison should always include the LiveBench snapshot date, because public rankings change over time.
 
 ## Success Criteria
 
@@ -137,6 +150,7 @@ The experiment is useful if it can answer these questions with reproducible arti
 - Does the LoRA adapter improve total LiveBench score over the instruct baseline?
 - Which categories improve or regress?
 - Does the adapter close any part of the gap to `Qwen3-4B-Thinking-2507`?
+- Where does the adapter land relative to public LiveBench large-model results?
 - Does explicit reasoning SFT cause longer outputs, formatting issues, or degraded instruction following?
 
 ## References
@@ -144,4 +158,5 @@ The experiment is useful if it can answer these questions with reproducible arti
 - Qwen3-4B-Instruct-2507: https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507
 - Qwen3-4B-Thinking-2507: https://huggingface.co/Qwen/Qwen3-4B-Thinking-2507
 - OpenThoughts3-1.2M: https://huggingface.co/datasets/open-thoughts/OpenThoughts3-1.2M
+- LiveBench leaderboard: https://livebench.ai/
 - LiveBench: https://github.com/LiveBench/LiveBench
