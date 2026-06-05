@@ -1,48 +1,48 @@
 # AlignReason
 
-AlignReason is a small post-training experiment for testing whether explicit reasoning SFT data can improve a strong 4B instruct model.
+AlignReason 是一个小规模后训练实验：使用高质量显式推理数据对 4B instruct 模型做 LoRA SFT，并用 LiveBench 验证推理、数学、代码、科学等能力是否提升。
 
-## Experiment Question
+## 实验问题
 
-Can high-quality reasoning traces from OpenThoughts improve `Qwen/Qwen3-4B-Instruct-2507` on LiveBench, especially on reasoning, math, code, and science tasks?
+OpenThoughts 的高质量 reasoning trace 能否进一步提升 `Qwen/Qwen3-4B-Instruct-2507` 在 LiveBench 上的表现？
 
-The main fine-tuning target is:
+本项目的微调对象是：
 
 - `Qwen/Qwen3-4B-Instruct-2507`
 
-The comparison set is:
+对比对象包括：
 
-- `Qwen/Qwen3-4B-Instruct-2507` before fine-tuning
-- `Qwen/Qwen3-4B-Thinking-2507` as a stronger thinking-model reference
-- current large models on the public LiveBench leaderboard
+- 微调前的 `Qwen/Qwen3-4B-Instruct-2507`
+- 同规模 thinking 参考模型 `Qwen/Qwen3-4B-Thinking-2507`
+- LiveBench 公榜上的大模型结果
 
-This keeps the experiment clean: the LoRA adapter is trained only on the non-thinking instruct model, then compared against its original baseline, Qwen's dedicated thinking variant, and the broader public leaderboard.
+这样可以把实验拆成两层：先看 LoRA 相对原始 instruct 模型是否带来增益，再看它在公榜大模型坐标系里的位置。
 
-## Initial Plan
+## 初始方案
 
-| Area | Choice |
+| 项目 | 选择 |
 | --- | --- |
-| Base model for SFT | `Qwen/Qwen3-4B-Instruct-2507` |
-| Same-size reference | `Qwen/Qwen3-4B-Thinking-2507` |
-| Public reference | Large models on the LiveBench leaderboard |
-| Dataset | `open-thoughts/OpenThoughts3-1.2M` |
-| Sample size | 20,000 examples after smoke tests |
-| Data style | Chat messages with assistant reasoning traces |
-| Fine-tuning method | LoRA SFT |
-| Hardware target | Single RTX 3090 24GB |
-| First sequence length | 4096 |
-| Stretch sequence length | 8192 if memory allows |
-| Evaluation | LiveBench before and after SFT |
+| 微调基座 | `Qwen/Qwen3-4B-Instruct-2507` |
+| 同规模参考 | `Qwen/Qwen3-4B-Thinking-2507` |
+| 公榜参考 | LiveBench leaderboard 上的大模型 |
+| 数据集 | `open-thoughts/OpenThoughts3-1.2M` |
+| 采样量 | smoke test 后扩展到 20,000 条 |
+| 数据形式 | 带 assistant reasoning trace 的 chat messages |
+| 微调方式 | LoRA SFT |
+| 目标硬件 | 单卡 RTX 3090 24GB |
+| 第一版上下文 | 4096 |
+| 后续尝试 | 显存允许时测试 8192 |
+| 评测 | 微调前后都跑 LiveBench |
 
-## Why Instruct for Fine-Tuning?
+## 为什么微调 Instruct 模型
 
-`Qwen3-4B-Instruct-2507` is the main target because it is a strong 4B non-thinking instruct model that has already been optimized for reasoning, math, science, coding, and instruction following. Fine-tuning it with explicit reasoning data tests a narrow hypothesis:
+`Qwen3-4B-Instruct-2507` 是一个较强的 4B non-thinking instruct 模型，已经针对推理、数学、科学、代码和指令跟随做过优化。因此本项目不是测试“普通模型能否学会推理”，而是测试一个更窄的问题：
 
-> Can reasoning traces further improve a reasoning-optimized non-thinking instruct model?
+> 显式 reasoning trace SFT 能否进一步提升一个已经做过推理优化的 non-thinking instruct 模型？
 
-`Qwen3-4B-Thinking-2507` is useful as a same-size comparison point, but it is not the first fine-tuning target. It already defaults to long-form reasoning, so gains from OpenThoughts would be harder to interpret.
+`Qwen3-4B-Thinking-2507` 作为同规模参考很有价值，但不作为第一阶段微调对象。它本身默认长推理，直接微调它会让实验结论更难解释。
 
-## Repository Layout
+## 仓库结构
 
 ```text
 alignreason/
@@ -52,45 +52,50 @@ alignreason/
     experiment.yaml
   docs/
     environment.md
+    livebench-baseline.md
   scripts/
 ```
 
-The first implementation milestone is to add scripts for:
+第一批实现目标：
 
-1. sampling OpenThoughts into JSONL,
-2. running a 100-example LoRA smoke train,
-3. training the 20K-example adapter,
-4. serving base and fine-tuned models for LiveBench.
+1. 采样 OpenThoughts 并保存为 JSONL；
+2. 用 100 条样本跑 LoRA smoke train；
+3. 用 20K 样本训练正式 adapter；
+4. 用同一套 LiveBench 流程评测 base 和 fine-tuned 模型。
 
-## Environment
+## 环境
 
-Create a Python environment:
+创建 Python 环境：
 
 ```bash
-cd /home/kai/workspace/alignreason
+cd /path/to/alignreason
 uv venv .venv
 source .venv/bin/activate
 uv pip install -r requirements.txt
 ```
 
-Qwen3 requires a recent Transformers version. The model card warns that `transformers<4.51.0` can fail with `KeyError: 'qwen3'`, so this project keeps the dependency at or above that version.
+Qwen3 需要较新的 Transformers。模型卡提示 `transformers<4.51.0` 可能出现 `KeyError: 'qwen3'`，因此本项目依赖中保留 `transformers>=4.51.0`。
 
-## Smoke Test First
+更完整的环境说明见 [docs/environment.md](docs/environment.md)。
 
-Before the full run, use a small sample:
+第一阶段 LiveBench baseline 评测流程见 [docs/livebench-baseline.md](docs/livebench-baseline.md)。
 
-| Step | Purpose |
+## 先做 Smoke Test
+
+正式训练前先跑小规模检查：
+
+| 步骤 | 目的 |
 | --- | --- |
-| 100 examples | Validate dataset conversion and chat template |
-| 20-50 training steps | Validate LoRA target modules and GPU memory |
-| One short generation | Validate that the adapter loads and responds |
-| Tiny eval subset | Check that the pipeline works before LiveBench |
+| 100 条样本 | 验证数据转换和 chat template |
+| 20-50 个训练 step | 验证 LoRA target modules 和显存占用 |
+| 一次短生成 | 验证 adapter 可以加载并正常回答 |
+| 一个很小的评测子集 | 验证进入 LiveBench 前的链路正常 |
 
-Only after the smoke test passes should the project move to the 20K-example training run.
+只有 smoke test 通过后，再进入 20K 样本训练。
 
-## Expected Training Defaults
+## 训练默认值
 
-These are starting points, not final claims:
+这些是第一版起点，不是最终结论：
 
 ```yaml
 model_name: Qwen/Qwen3-4B-Instruct-2507
@@ -112,48 +117,48 @@ gradient_accumulation_steps: 8
 gradient_checkpointing: true
 ```
 
-On an RTX 3090, `4096` context is the conservative first target. `8192` should be treated as a follow-up memory experiment.
+在 RTX 3090 上，`4096` 是保守的第一版上下文长度。`8192` 应作为后续显存实验。
 
-## Evaluation Design
+## 评测设计
 
-Run LiveBench in three local conditions:
+本地跑三个条件：
 
-| Condition | Model |
+| 条件 | 模型 |
 | --- | --- |
 | Baseline | `Qwen/Qwen3-4B-Instruct-2507` |
 | Fine-tuned | `Qwen/Qwen3-4B-Instruct-2507` + AlignReason LoRA |
-| Same-size reference | `Qwen/Qwen3-4B-Thinking-2507` |
+| 同规模参考 | `Qwen/Qwen3-4B-Thinking-2507` |
 
-The main reported result should be:
+最主要的结果是：
 
 ```text
 fine-tuned instruct score - baseline instruct score
 ```
 
-The thinking model score is a same-size reference point, not the only external target.
+Thinking 模型是同规模参考，不是唯一外部目标。
 
-Also report the fine-tuned model against the public LiveBench leaderboard:
+同时把 fine-tuned 模型放到 LiveBench 公榜坐标中比较：
 
-| Comparison | Purpose |
+| 比较 | 目的 |
 | --- | --- |
-| Fine-tuned vs frontier models | Show the absolute gap to current large proprietary models |
-| Fine-tuned vs large open models | Show whether a 4B LoRA can approach larger open-weight systems |
-| Fine-tuned vs same-size Qwen thinking | Separate scale effects from reasoning-mode effects |
-| Fine-tuned vs base instruct | Measure the actual effect of this project |
+| Fine-tuned vs frontier models | 看和当前大闭源模型的绝对差距 |
+| Fine-tuned vs large open models | 看 4B LoRA 是否接近更大开源模型 |
+| Fine-tuned vs same-size Qwen thinking | 区分模型规模和 thinking mode 的影响 |
+| Fine-tuned vs base instruct | 衡量本项目训练带来的真实增益 |
 
-The leaderboard comparison should always include the LiveBench snapshot date, because public rankings change over time.
+公榜比较必须记录 LiveBench snapshot 日期，因为公开排名会随时间变化。
 
-## Success Criteria
+## 成功标准
 
-The experiment is useful if it can answer these questions with reproducible artifacts:
+实验应该能用可复现产物回答这些问题：
 
-- Does the LoRA adapter improve total LiveBench score over the instruct baseline?
-- Which categories improve or regress?
-- Does the adapter close any part of the gap to `Qwen3-4B-Thinking-2507`?
-- Where does the adapter land relative to public LiveBench large-model results?
-- Does explicit reasoning SFT cause longer outputs, formatting issues, or degraded instruction following?
+- LoRA adapter 是否提升了 instruct baseline 的 LiveBench 总分？
+- 哪些类别提升，哪些类别下降？
+- Adapter 是否缩小了和 `Qwen3-4B-Thinking-2507` 的差距？
+- Adapter 在 LiveBench 公榜大模型结果中处于什么位置？
+- 显式 reasoning SFT 是否带来输出变长、格式退化或指令跟随下降？
 
-## References
+## 参考
 
 - Qwen3-4B-Instruct-2507: https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507
 - Qwen3-4B-Thinking-2507: https://huggingface.co/Qwen/Qwen3-4B-Thinking-2507

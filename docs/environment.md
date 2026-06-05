@@ -1,10 +1,12 @@
-# Environment Notes
+# 环境说明
 
-## Hardware Target
+本文档记录 AlignReason 的基础环境准备。LiveBench baseline 的完整执行流程见 [livebench-baseline.md](livebench-baseline.md)。
 
-The first target machine is a single RTX 3090 with 24GB VRAM.
+## 目标硬件
 
-Start with:
+第一目标环境是单卡 RTX 3090，24GB 显存。
+
+建议从以下配置开始：
 
 - sequence length: 4096
 - per-device batch size: 1
@@ -12,35 +14,43 @@ Start with:
 - gradient checkpointing: enabled
 - fp16: enabled
 
-Move to 8192 context only after the 4096 smoke test has passed.
+4096 smoke test 通过后，再尝试 8192 上下文。
 
-## Python Setup
+## Python 环境
+
+推荐使用 `uv` 创建环境：
 
 ```bash
-cd /home/kai/workspace/alignreason
+cd /path/to/alignreason
 uv venv .venv
 source .venv/bin/activate
 uv pip install -r requirements.txt
 ```
 
-This project uses `uv` for environment setup because some minimal Debian/Ubuntu Python installs do not include `ensurepip`, which can make `python3 -m venv` fail unless `python3-venv` is installed.
+本项目使用 `uv` 是因为部分精简 Debian/Ubuntu Python 环境没有内置 `ensurepip`，直接运行 `python3 -m venv` 可能因为缺少 `python3-venv` 而失败。
 
-If `uv` cannot write to its default cache directory, use a workspace or temporary cache:
+如果 `uv` 默认缓存目录不可写，可以指定临时缓存：
 
 ```bash
 UV_CACHE_DIR=/tmp/uv-cache uv venv .venv
 UV_CACHE_DIR=/tmp/uv-cache uv pip install -r requirements.txt
 ```
 
-## Hugging Face Login
+## Hugging Face 登录
 
-If model downloads fail because of gated access, rate limits, or private cache settings:
+如果模型或数据下载遇到访问限制、限速或私有缓存问题，先登录：
 
 ```bash
 huggingface-cli login
 ```
 
-## CUDA Check
+也可以使用新版命令：
+
+```bash
+hf auth login
+```
+
+## CUDA 检查
 
 ```bash
 python - <<'PY'
@@ -54,7 +64,9 @@ if torch.cuda.is_available():
 PY
 ```
 
-## Minimal Model Load Check
+## 最小模型加载检查
+
+在正式训练或评测前，先确认 tokenizer、chat template 和模型加载正常：
 
 ```bash
 python - <<'PY'
@@ -82,18 +94,18 @@ print(tokenizer.decode(outputs[0][inputs["input_ids"].shape[-1]:], skip_special_
 PY
 ```
 
-## vLLM Serving Checks
+## vLLM 启动检查
 
-Base instruct model:
+Base instruct 模型：
 
 ```bash
 vllm serve "Qwen/Qwen3-4B-Instruct-2507"
 ```
 
-Thinking reference model:
+Thinking 参考模型：
 
 ```bash
 vllm serve "Qwen/Qwen3-4B-Thinking-2507"
 ```
 
-Keep the generation settings consistent when comparing models in LiveBench.
+比较不同模型时，需要保持生成参数一致。
