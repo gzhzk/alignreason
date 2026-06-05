@@ -63,6 +63,8 @@ alignreason/
 3. 用 20K 样本训练正式 adapter；
 4. 用同一套 LiveBench 流程评测 base 和 fine-tuned 模型。
 
+当前 baseline 阶段还没有使用 AlignReason 自写脚本。评测直接使用 LiveBench 官方仓库中的 `run_livebench.py` 和 `show_livebench_result.py`，本仓库先记录流程和配置；后续再补数据采样、训练和结果汇总脚本。
+
 ## 环境
 
 创建 Python 环境：

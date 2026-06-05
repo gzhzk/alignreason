@@ -15,6 +15,13 @@ Qwen/Qwen3-4B-Instruct-2507
 
 这个分数作为后续 AlignReason LoRA 微调结果的对照基线。
 
+本阶段使用的是 LiveBench 官方脚本：
+
+- `run_livebench.py`：生成模型回答并执行评测；
+- `show_livebench_result.py`：汇总并展示结果。
+
+AlignReason 仓库当前不封装自己的 baseline 评测脚本，避免和官方评测口径产生偏差。
+
 ## 路径约定
 
 先选择一个模型权重目录：
