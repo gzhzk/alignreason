@@ -18,21 +18,45 @@ OpenThoughts 的高质量 reasoning trace 能否进一步提升 `Qwen/Qwen3-4B-I
 
 这样可以把实验拆成两层：先看 LoRA 相对原始 instruct 模型是否带来增益，再看它在公榜大模型坐标系里的位置。
 
+## 实验路线
+
+完整的渐进式实验计划见 [docs/experiment-plan.md](docs/experiment-plan.md)。
+
+```text
+Phase 0: 全量 Baseline（当前）
+     ↓
+Phase 1: Imitation SFT（模仿，快速提升）
+     ↓
+Phase 2: Rejection + DCO（搜索，突破天花板）
+     ↓
+Phase 3 [备选]: Self-Play / GRPO（自进化）
+```
+
+### Baseline 结果（2026-01-08 release）
+
+| 类别 | 分数 | 状态 |
+|------|:----:|------|
+| instruction_following | **79.1** | ✅ |
+| data_analysis | **51.8** | ✅ |
+| reasoning | **51.4** | ✅ |
+| math | **41.1** | ✅ |
+| language | **28.7** | ✅ |
+| coding | — | ⏭️ 需要 Docker |
+| **Average** | **50.4** | |
+
+使用 2026-01-08 release 而非 2024-11-25（Qwen3 训练数据截止前），是为了避免时间穿越和数据泄露风险。
+
 ## 初始方案
 
 | 项目 | 选择 |
 | --- | --- |
 | 微调基座 | `Qwen/Qwen3-4B-Instruct-2507` |
 | 同规模参考 | `Qwen/Qwen3-4B-Thinking-2507` |
-| 公榜参考 | LiveBench leaderboard 上的大模型 |
 | 数据集 | `open-thoughts/OpenThoughts3-1.2M` |
 | 采样量 | smoke test 后扩展到 20,000 条 |
-| 数据形式 | 带 assistant reasoning trace 的 chat messages |
 | 微调方式 | LoRA SFT |
 | 目标硬件 | 单卡 RTX 3090 24GB |
-| 第一版上下文 | 4096 |
-| 后续尝试 | 显存允许时测试 8192 |
-| 评测 | 微调前后都跑 LiveBench |
+| 评测 | LiveBench 2026-01-08 release，vLLM 本地 API |
 
 ## 为什么微调 Instruct 模型
 

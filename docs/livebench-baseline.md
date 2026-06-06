@@ -153,8 +153,9 @@ vllm serve "$MODEL_DIR" \
   --host 0.0.0.0 \
   --port 8000 \
   --dtype auto \
-  --max-model-len 8192 \
-  --gpu-memory-utilization 0.90
+  --max-model-len 16384 \
+  --gpu-memory-utilization 0.95 \
+  --max-num-seqs 64
 ```
 
 `--served-model-name` 必须和 LiveBench 里传入的 `--model` 保持一致。
@@ -167,8 +168,9 @@ vllm serve "$MODEL_DIR" \
   --host 0.0.0.0 \
   --port 8000 \
   --dtype auto \
-  --max-model-len 4096 \
-  --gpu-memory-utilization 0.90
+  --max-model-len 16384 \
+  --gpu-memory-utilization 0.95 \
+  --max-num-seqs 64
 ```
 
 `Qwen3-4B-Instruct-2507` 是 non-thinking instruct 模型，baseline 阶段不需要 vLLM 的 reasoning parser 相关参数。
@@ -220,10 +222,10 @@ python run_livebench.py \
   --bench-name live_bench/math \
   --api-base http://localhost:8000/v1 \
   --api-key EMPTY \
-  --parallel-requests 2 \
+  --parallel-requests 8 \
   --max-tokens 4096 \
   --force-temperature 0 \
-  --livebench-release-option 2024-11-25 \
+  --livebench-release-option 2026-01-08 \
   --resume
 ```
 
@@ -238,10 +240,10 @@ python run_livebench.py \
   --bench-name live_bench \
   --api-base http://localhost:8000/v1 \
   --api-key EMPTY \
-  --parallel-requests 2 \
+  --parallel-requests 8 \
   --max-tokens 4096 \
   --force-temperature 0 \
-  --livebench-release-option 2024-11-25 \
+  --livebench-release-option 2026-01-08 \
   --resume
 ```
 
@@ -272,6 +274,32 @@ python show_livebench_result.py \
 ```
 
 保留 LiveBench 生成的结果文件，后续微调后使用同一套设置复测。
+
+## Baseline 分数
+
+2026-01-08 release 下各 task 和 category 的详细得分：
+
+| Task | 分数 |
+|------|:----:|
+| AMPS_Hard | 67.0 |
+| math_comp | 45.7 |
+| olympiad | 10.8 |
+| spatial | 50.0 |
+| zebra_puzzle | 52.8 |
+| connections | 28.7 |
+| tablereformat | 76.0 |
+| cta | 46.0 |
+| tablejoin | 33.5 |
+| simplify | 79.1 |
+
+| Category | 分数 |
+|----------|:----:|
+| instruction_following | **79.1** |
+| data_analysis | **51.8** |
+| reasoning | **51.4** |
+| math | **41.1** |
+| language | **28.7** |
+| **Average** | **50.4** |
 
 ## 清理
 
