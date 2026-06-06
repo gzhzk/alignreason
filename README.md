@@ -58,13 +58,9 @@ Phase 3 [备选]: Self-Play / GRPO（自进化）
 | 目标硬件 | 单卡 RTX 3090 24GB |
 | 评测 | LiveBench 2026-01-08 release，vLLM 本地 API |
 
-## 为什么微调 Instruct 模型
+## 为什么要做 reasoning 后训练
 
-`Qwen3-4B-Instruct-2507` 是一个较强的 4B non-thinking instruct 模型，已经针对推理、数学、科学、代码和指令跟随做过优化。因此本项目不是测试“普通模型能否学会推理”，而是测试一个更窄的问题：
-
-> 显式 reasoning trace SFT 能否进一步提升一个已经做过推理优化的 non-thinking instruct 模型？
-
-`Qwen3-4B-Thinking-2507` 作为同规模参考很有价值，但不作为第一阶段微调对象。它本身默认长推理，直接微调它会让实验结论更难解释。
+小模型的推理能力是瓶颈。OpenThoughts 提供了 QwQ-32B 产出的高质量 reasoning traces，用 LoRA SFT → Rejection Sampling → DCO 逐步递进，看 4B 模型的推理分数能拉高多少。
 
 ## 仓库结构
 
